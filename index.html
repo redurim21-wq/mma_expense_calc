@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>(가상) 병역의무 여비계산기</title>
+    <script src="data.js"></script> 
+    <!-- 모바일 앱스러운 폰트와 아이콘 적용을 위해 구글 폰트 추가 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    
+    <style>
+        :root {
+            /* e-병무지갑과 유사한 모던하고 신뢰감 있는 컬러 팔레트 */
+            --primary: #0056b3;        /* 딥 블루 */
+            --primary-light: #e6f0fa;  /* 아주 연한 블루 */
+            --secondary: #00a86b;      /* 신뢰감 있는 그린 */
+            --bg-color: #f2f4f7;       /* 모바일 앱 기본 배경 (옅은 회색) */
+            --surface: #ffffff;        /* 카드 배경 */
+            --text-dark: #111111;
+            --text-normal: #333333;
+            --text-light: #777777;
+            --border: #e2e8f0;
+            --danger: #ff4757;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            
+            /* 앱 상단바(안드로이드/iOS 스타일) 시뮬레이션용 공간 */
+            --safe-area-top: 40px; 
+        }
+
+        * { 
+            box-sizing: border-box; 
+            font-family: 'Noto Sans KR', -apple-system, sans-serif; 
+            -webkit-tap-highlight-color: transparent; /* 터치 시 파란색 깜빡임 제거 */
+        }
+        
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-normal); 
+            margin: 0; 
+            padding: 0; 
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* -------------------------------------
+           모바일 앱 컨테이너 (스마트폰 화면 흉내)
+        -------------------------------------- */
+        .app-container { 
+            width: 100%; 
+            max-width: 420px; /* 스마트폰 폭에 맞춤 */
+            background-color: var(--bg-color); 
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1); /* PC에서 볼 때 구분을 위해 */
+        }
+
+        /* 앱 헤더 (e-병무지갑 스타일) */
+        .app-header {
+            background-color: var(--surface);
+            padding: 16px 20px;
+            padding-top: calc(16px + env(safe-area-inset-top, 0px)); /* 아이폰 노치 대응 */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .app-header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .header-icon {
+            color: var(--text-normal);
+            font-size: 24px;
+            cursor: pointer;
+            width: 24px;
+        }
+
+        .content-area {
+            padding: 20px 20px 100px 20px; /* 하단 버튼 공간 확보 */
+        }
+
+        .page { display: none; animation: fadeIn 0.3s ease-out forwards; }
+        .page.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* -------------------------------------
+           알림 배너 (주의사항)
+        -------------------------------------- */
+        .alert-banner {
+            background-color: #fff4e5;
+            border-left: 4px solid #ff9800;
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .alert-banner .title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #e65100;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+        
+        .alert-banner .desc {
+            font-size: 0.85rem;
+            color: #795548;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        /* 체크박스 커스텀 (애플/안드로이드 스타일 섞음) */
+        .custom-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            background: #ffffff;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .custom-checkbox input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background-color: #fff;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .custom-checkbox input[type="checkbox"]:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .custom-checkbox input[type="checkbox"]:checked::after {
+            content: '✔';
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .custom-checkbox span {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* -------------------------------------
+           입력 폼 컨테이너 (카드 스타일)
+        -------------------------------------- */
+        .section-card {
+            background-color: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 24px 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: opacity 0.3s ease;
+        }
+
+        .section-card.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title .number-badge {
+            background-color: var(--primary);
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 900;
+        }
+
+        /* -------------------------------------
+           입력 컨트롤 (선택 카드 & 드롭다운)
+        -------------------------------------- */
+        .choice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .choice-card {
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            background-color: #fff;
+        }
+
+        .choice-card input[type="radio"] { display: none; }
+
+        .choice-card .icon {
+            font-size: 28px;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .choice-card .title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .choice-card .desc {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            line-height: 1.3;
+        }
+
+        .choice-card.selected {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .choice-card.selected .icon, 
+        .choice-card.selected .title {
+            color: var(--primary);
+        }
+        
+        .choice-card.selected .desc {
+            color: #004488;
+        }
+
+        /* 드롭다운 디자인 */
+        .input-wrap {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        
+        .input-wrap:last-child { margin-bottom: 0; }
+
+        select {
+            width: 100%;
+            padding: 16px 40px 16px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            background-color: #fcfcfc;
+            appearance: none;
+            -webkit-appearance: none;
+            outline: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .select-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aab5;
+            pointer-events: none;
+        }
+
+        /* -------------------------------------
+           하단 고정 플로팅 버튼 영역
+        -------------------------------------- */
+        .floating-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 420px;
+            padding: 16px 20px;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            background: linear-gradient(to top, rgba(255,255,255,1) 80%, rgba(255,255,255,0));
+            z-index: 1000;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary { background-color: var(--primary); color: #fff; }
+        .btn-primary:active { transform: scale(0.98); background-color: #004488; }
+        .btn-primary:disabled { 
+            background-color: #d1d9e6; 
+            color: #99a5b5; 
+            box-shadow: none; 
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-survey {
+            background-color: var(--secondary);
+            color: white;
+            margin-top: 16px;
+        }
+        .btn-survey:active { transform: scale(0.98); background-color: #008855; }
+
+        .btn-outline {
+            background-color: white;
+            color: var(--text-normal);
+            border: 1px solid var(--border);
+            box-shadow: none;
+            margin-top: 12px;
+        }
+
+        /* -------------------------------------
+           영수증 (결과창) UI - 모던 티켓 스타일
+        -------------------------------------- */
+        .result-header-box {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .result-header-box .icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .result-header-box h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin: 0 0 4px 0;
+            color: var(--text-dark);
+        }
+
+        .ticket-box {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            position: relative;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 티켓 펀칭 구멍 디자인 */
+        .ticket-divider {
+            position: relative;
+            border-top: 2px dashed #e2e8f0;
+            margin: 0 20px;
+        }
+        .ticket-divider::before, .ticket-divider::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: var(--bg-color);
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .ticket-divider::before { left: -31px; border-right-color: transparent; border-top-color: transparent; transform: rotate(45deg); }
+        .ticket-divider::after { right: -31px; border-left-color: transparent; border-bottom-color: transparent; transform: rotate(45deg); }
+
+        .ticket-section { padding: 24px 20px; }
+        
+        .ticket-section-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+        
+        .data-row:last-child { margin-bottom: 0; }
+        
+        .data-label { color: var(--text-light); font-weight: 500; }
+        .data-value { color: var(--text-dark); font-weight: 700; text-align: right; }
+        
+        .subtotal-row {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+            background-color: #fafbfc;
+            margin: 16px -20px -24px -20px;
+            padding: 16px 20px;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+        
+        .subtotal-row .data-label { color: var(--text-dark); font-weight: 800; }
+        .subtotal-row .data-value { color: var(--primary); font-size: 1.1rem; }
+
+        .total-amount-box {
+            background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(0, 86, 179, 0.25);
+        }
+        
+        .total-label { font-size: 1rem; font-weight: 500; opacity: 0.9; margin-bottom: 8px; }
+        .total-value { font-size: 2.2rem; font-weight: 900; letter-spacing: -1px; }
+        .total-value span { font-size: 1.2rem; font-weight: 500; margin-left: 4px; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- 앱 상단 헤더 -->
+    <header class="app-header">
+        <span class="material-symbols-rounded header-icon" onclick="resetCalculator()" style="visibility:hidden;" id="back-btn">arrow_back_ios</span>
+        <h1>⚠ (가상) 병역 여비계산기 ⚠</h1>
+        <span class="material-symbols-rounded header-icon">menu</span>
+    </header>
+
+    <!-- ================= PAGE 1: 입력 화면 ================= -->
+    <div id="page-input" class="page active content-area">
+        
+        <div class="alert-banner">
+            <div class="title"><span class="material-symbols-rounded">info</span> 설문조사 체험용 가상 여비계산기</div>
+            <div class="desc">
+                본 프로그램은 앱 기능 도입을 위한 모의 체험판입니다.<br>
+                산출된 결과는 실제 지급액과 다를 수 있습니다.
+            </div>
+            
+            <label class="custom-checkbox">
+                <input type="checkbox" id="agree-checkbox">
+                <span>네, 주의사항을 확인했습니다.</span>
+            </label>
+        </div>
+
+        <!-- 1. 검사 종류 선택 -->
+        <div class="section-card disabled" id="group-type">
+            <div class="section-title"><span class="number-badge">1</span> 판정검사 종류</div>
+            <div class="choice-grid">
+                <div class="choice-card" id="card-draft" onclick="selectExamType('draft')">
+                    <input type="radio" name="exam_type_radio" id="radio-draft" value="draft" disabled>
+                    <span class="title">병역판정검사</span>
+                    <span class="desc">최초 신체검사</span>
+                </div>
+                <div class="choice-card" id="card-enlist" onclick="selectExamType('enlist')">
+                    <input type="radio" name="exam_type_radio" id="radio-enlist" value="enlist" disabled>
+                    <span class="title">입영판정검사</span>
+                    <span class="desc">입영 전 신체검사</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 출발지 선택 -->
+        <div class="section-card disabled" id="group-origin">
+            <div class="section-title"><span class="number-badge">2</span> 출발지 (시·구·군)</div>
+            <div class="input-wrap">
+                <select id="sido-select" onchange="updateSigungu()" disabled>
+                    <option value="" disabled selected>시·도를 선택해주세요</option>
+                </select>
+                <span class="material-symbols-rounded select-icon">expand_more</span>
+            </div>
+            <div class="input-wrap">
+                <select id="sigungu-select" onchange="checkInputsAndScroll('group-center')" disabled>
+                    <option value="" disabled selected>시·구·군을 선택해주세요</option>
+                </select>
+                <span class="material-symbols-rounded select-icon">expand_more</span>
+            </div>
+        </div>
+
+        <!-- 3. 검사장 선택 -->
+        <div class="section-card disabled" id="group-center">
+            <div class="section-title"><span class="number-badge">3</span> 참석 검사장</div>
+            <div class="input-wrap">
+                <select id="center-select" onchange="checkInputsAndScroll('group-base')" disabled>
+                    <option value="" disabled selected>방문하신 검사장을 선택하세요</option>
+                </select>
+                <span class="material-symbols-rounded select-icon">expand_more</span>
+            </div>
+        </div>
+
+        <!-- 4. 입영 부대 선택 -->
+        <div class="section-card disabled" id="group-base" style="display: none;">
+            <div class="section-title"><span class="number-badge">4</span> 입영 부대</div>
+            <div class="input-wrap">
+                <select id="base-select" onchange="checkButtonState()" disabled>
+                    <option value="" disabled selected>입영 예정 부대를 선택하세요</option>
+                </select>
+                <span class="material-symbols-rounded select-icon">expand_more</span>
+            </div>
+        </div>
+        
+        <!-- 하단 여백 확보 -->
+        <div style="height: 60px;"></div>
+
+        <!-- 하단 고정 버튼 -->
+        <div class="floating-bottom">
+            <button class="btn btn-primary" id="calc-btn" onclick="calculateExpenses()" disabled>
+                예상 여비 확인하기
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ================= PAGE 2: 결과 화면 ================= -->
+    <div id="page-result" class="page content-area">
+        
+        <div class="result-header-box">
+            <span class="material-symbols-rounded icon">check_circle</span>
+            <h2>⚠(가상) 여비 산출 완료</h2>
+            <p style="color:var(--text-light); font-size:0.9rem; margin:0;">2026년도 기준 모의 계산 결과입니다.</p>
+            <p style="color:var(--text-light); font-size:1.5rem; margin:0;">주의. 가상의 결과값입니다.</p>
+
+        </div>
+
+        <!-- 티켓 형태의 상세 영수증 -->
+        <div class="ticket-box" id="receipt-box">
+            <!-- 자바스크립트로 내역 주입 -->
+        </div>
+
+        <!-- 총액 강조 박스 -->
+        <div class="total-amount-box">
+            <div class="total-label">총 예상 지급액</div>
+            <div class="total-label">⚠주의⚠ 가상의 금액입니다.</div>
+            <div class="total-value" id="grand-total-text">0<span>원</span></div>
+        </div>
+
+        <div style="text-align: center; margin-top: 32px; margin-bottom: 16px;">
+            <p style="font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin:0 0 8px 0;">
+                잠깐! 1분만 투자해 주세요 🙏
+            </p>
+            <p style="font-size: 1rem; color: var(--text-light); margin:0;">
+                이 기능이 실제 앱에 도입되면 어떨까요?<br>여러분의 의견이 적극행정의 밑거름이 됩니다.
+            </p>
+        </div>
+
+        <!-- 설문 버튼 & 다시하기 버튼 -->
+        <button class="btn btn-survey" onclick="openSurveyUrl()">
+            <span class="material-symbols-rounded">edit_square</span> 체험 후기 및 설문조사 참여하기 👉
+        </button>
+        <button class="btn btn-outline" onclick="resetCalculator()">
+            <span class="material-symbols-rounded">refresh</span> 다시 계산하기
+        </button>
+        
+        <div style="height: 40px;"></div>
+    </div>
+
+</div>
+
+<script>
+    // ----------------------------------------------------
+    // 고정 목록 데이터
+    // ----------------------------------------------------
+    const centersList = [
+        "서울지방병무청", "부산울산지방병무청", "대구경북지방병무청", "경인지방병무청",
+        "광주전남지방병무청", "대전충남지방병무청", "강원지방병무청", "충북지방병무청",
+        "전북지방병무청", "경남지방병무청", "제주지방병무청", "인천병무지청",
+        "경기북부병무지청", "강원영동병무지청"
+    ];
+    const basesList = [
+        "3사단", "5사단", "6사단", "7사단", "12사단", "15사단", "21사단", "31사단",
+        "32사단", "35사단", "36사단", "37사단", "39사단", "50사단", "51사단", "55사단",
+        "육군훈련소", "해병대교육훈련단", "해군교육사령부", "공군교육사령부", "해병9여단"
+    ];
+
+    // ----------------------------------------------------
+    // 초기화 및 데이터 세팅
+    // ----------------------------------------------------
+    window.onload = function() {
+        const sidoSelect = document.getElementById('sido-select');
+        // distanceData는 외부 data.js에서 로드됨
+        if(typeof distanceData !== 'undefined') {
+            for (const sido in distanceData) {
+                let opt = document.createElement('option');
+                opt.value = sido;
+                opt.textContent = sido;
+                sidoSelect.appendChild(opt);
+            }
+        } else {
+            alert("데이터를 불러오지 못했습니다. data.js 파일이 같은 폴더에 있는지 확인해주세요.");
+        }
+        
+        const centerSelect = document.getElementById('center-select');
+        centersList.forEach(center => {
+            let opt = document.createElement('option');
+            opt.value = center;
+            opt.textContent = center;
+            centerSelect.appendChild(opt);
+        });
+        
+        const baseSelect = document.getElementById('base-select');
+        basesList.forEach(base => {
+            let opt = document.createElement('option');
+            opt.value = base;
+            opt.textContent = base;
+            baseSelect.appendChild(opt);
+        });
+    };
+
+    // ----------------------------------------------------
+    // UI 로직 (상태 제어, 스크롤, 버튼 활성화)
+    // ----------------------------------------------------
+    
+    // 주의사항 동의 체크 시 UI 잠금 해제
+    document.getElementById('agree-checkbox').addEventListener('change', function(e) {
+        const isChecked = e.target.checked;
+        const groups = ['group-type', 'group-origin', 'group-center', 'group-base'];
+        
+        groups.forEach(id => {
+            const element = document.getElementById(id);
+            if(element) {
+                if (isChecked) element.classList.remove('disabled');
+                else element.classList.add('disabled');
+            }
+        });
+
+        document.getElementById('radio-draft').disabled = !isChecked;
+        document.getElementById('radio-enlist').disabled = !isChecked;
+        document.getElementById('sido-select').disabled = !isChecked;
+        document.getElementById('sigungu-select').disabled = !isChecked;
+        document.getElementById('center-select').disabled = !isChecked;
+        document.getElementById('base-select').disabled = !isChecked;
+        
+        checkButtonState();
+
+        if(isChecked) {
+            setTimeout(() => {
+                document.getElementById('group-type').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+    });
+
+    // 시/구/군 목록 업데이트
+    function updateSigungu() {
+        const sido = document.getElementById('sido-select').value;
+        const sigunguSelect = document.getElementById('sigungu-select');
+        
+        sigunguSelect.innerHTML = '<option value="" disabled selected>시·구·군을 선택해주세요</option>';
+        
+        if (sido && distanceData[sido]) {
+            const sigungus = Object.keys(distanceData[sido]);
+            sigungus.forEach(sgg => {
+                let opt = document.createElement('option');
+                opt.value = sgg;
+                opt.textContent = sgg;
+                sigunguSelect.appendChild(opt);
+            });
+        }
+        checkButtonState();
+        checkInputsAndScroll('group-center');
+    }
+
+    // 검사 종류 선택
+    function selectExamType(type) {
+        if (document.getElementById('agree-checkbox').checked === false) return;
+
+        document.getElementById('radio-' + type).checked = true;
+        document.querySelectorAll('.choice-card').forEach(card => card.classList.remove('selected'));
+        document.getElementById('card-' + type).classList.add('selected');
+
+        const baseGroup = document.getElementById('group-base');
+        if (type === 'enlist') {
+            baseGroup.style.display = 'block';
+            document.getElementById('base-select').value = "";
+        } else {
+            baseGroup.style.display = 'none';
+            document.getElementById('base-select').value = "";
+        }
+
+        checkButtonState();
+        checkInputsAndScroll('group-origin');
+    }
+
+    // 뷰포트 스크롤 유틸리티
+    function checkInputsAndScroll(nextGroupId) {
+        checkButtonState();
+        setTimeout(() => {
+            const nextGroup = document.getElementById(nextGroupId);
+            if(nextGroup && nextGroup.style.display !== 'none') {
+                const yOffset = -80; // 헤더 높이만큼 덜 스크롤되도록 보정
+                const y = nextGroup.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({top: y, behavior: 'smooth'});
+            }
+        }, 150);
+    }
+
+    // 하단 계산하기 버튼 활성화 상태 체크
+    function checkButtonState() {
+        const typeElement = document.querySelector('input[name="exam_type_radio"]:checked');
+        const sido = document.getElementById('sido-select').value;
+        const sigungu = document.getElementById('sigungu-select').value;
+        const center = document.getElementById('center-select').value;
+        const base = document.getElementById('base-select').value;
+        const btn = document.getElementById('calc-btn');
+
+        let isValid = true;
+        if (!typeElement || !sido || !sigungu || !center) isValid = false;
+        if (typeElement && typeElement.value === 'enlist' && !base) isValid = false;
+
+        btn.disabled = !isValid;
+    }
+
+
+    // ----------------------------------------------------
+    // 여비 산출 로직
+    // ----------------------------------------------------
+    function calculateExpenses() {
+        const typeElement = document.querySelector('input[name="exam_type_radio"]:checked');
+        const sido = document.getElementById('sido-select').value;
+        const sigungu = document.getElementById('sigungu-select').value;
+        const center = document.getElementById('center-select').value;
+        const base = document.getElementById('base-select').value;
+        const examType = typeElement.value;
+        
+        let distToCenter = 0;
+        let distToBase = 0;
+        
+        try {
+            distToCenter = distanceData[sido][sigungu][center];
+            if (distToCenter === undefined) throw "no_data";
+        } catch(e) {
+            alert("해당 출발지에서 검사장까지의 거리 정보가 없습니다."); return;
+        }
+        
+        if (examType === 'enlist') {
+            try {
+                distToBase = distanceData[sido][sigungu][base];
+                if (distToBase === undefined) throw "no_data";
+            } catch(e) {
+                alert("해당 출발지에서 부대까지의 거리 정보가 없습니다."); return;
+            }
+        }
+
+        // 화면 전환 처리
+        document.getElementById('page-input').classList.remove('active');
+        document.getElementById('page-result').classList.add('active');
+        document.getElementById('back-btn').style.visibility = 'visible';
+        window.scrollTo(0, 0);
+
+        const fuelUnit = 1486;
+        const efficiency = 13.3;
+        const mealUnit = 7000;
+        const lodgeUnit = 50000;
+
+        function getCostBreakdown(distance, mode) {
+            let roundTripDist = distance * 2;
+            let oneWayTrans = (distance * (fuelUnit / efficiency)) + (900 + (distance * 44.3));
+            let roundTripTrans = Math.floor((oneWayTrans * 2) / 100) * 100;
+
+            let mealCount = 0, lodgeCount = 0, finalTrans = roundTripTrans;
+
+            if (mode === 'center') {
+                if (roundTripDist <= 30) { mealCount = 1; finalTrans = 8000; }
+                else if (roundTripDist <= 60) { mealCount = 1; }
+                else if (roundTripDist <= 120) { mealCount = 2; }
+                else { mealCount = 3; lodgeCount = 1; }
+            } else {
+                if (roundTripDist <= 30) { mealCount = 0; finalTrans = 4000; }
+                else if (roundTripDist <= 60) { mealCount = 0; }
+                else if (roundTripDist <= 120) { mealCount = 1; }
+                else if (roundTripDist <= 200) { mealCount = 2; }
+                else if (roundTripDist <= 300) { mealCount = 2; }
+                else { mealCount = 3; lodgeCount = 1; }
+            }
+
+            return {
+                distance: roundTripDist, trans: finalTrans, 
+                meal: mealCount * mealUnit, mealCount: mealCount, 
+                lodge: lodgeCount * lodgeUnit, lodgeCount: lodgeCount, 
+                total: finalTrans + (mealCount * mealUnit) + (lodgeCount * lodgeUnit)
+            };
+        }
+
+        let receiptHTML = '';
+        let grandTotal = 0;
+
+        if (examType === 'draft') {
+            const centerCost = getCostBreakdown(distToCenter, 'center');
+            grandTotal = centerCost.total;
+
+            receiptHTML = `
+                <div class="ticket-section">
+                    <div class="ticket-section-title"><span class="material-symbols-rounded" style="font-size:20px;">local_hospital</span> 검사장 방문 여비</div>
+                    <div class="data-row"><span class="data-label">이동 경로</span><span class="data-value">출발지 ↔ ${center}</span></div>
+                    <div class="data-row"><span class="data-label">총 왕복거리</span><span class="data-value">${centerCost.distance.toFixed(1)} km</span></div>
+                    <div style="height:8px;"></div>
+                    <div class="data-row"><span class="data-label">교통비</span><span class="data-value">${centerCost.trans.toLocaleString()} 원</span></div>
+                    <div class="data-row"><span class="data-label">식비 (${centerCost.mealCount}식)</span><span class="data-value">${centerCost.meal.toLocaleString()} 원</span></div>
+                    <div class="data-row"><span class="data-label">숙박비 (${centerCost.lodgeCount}박)</span><span class="data-value">${centerCost.lodge.toLocaleString()} 원</span></div>
+                    
+                    <div class="subtotal-row data-row" style="margin-bottom:0;">
+                        <span class="data-label">항목 소계</span><span class="data-value">${centerCost.total.toLocaleString()} 원</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            const centerCost = getCostBreakdown(distToCenter, 'center');
+            const baseCost = getCostBreakdown(distToBase, 'base');
+            grandTotal = centerCost.total + baseCost.total;
+
+            receiptHTML = `
+                <div class="ticket-section">
+                    <div class="ticket-section-title"><span class="material-symbols-rounded" style="font-size:20px;">looks_one</span> 검사장 방문 여비</div>
+                    <div class="data-row"><span class="data-label">이동 경로</span><span class="data-value">출발지 ↔ ${center}</span></div>
+                    <div class="data-row"><span class="data-label">총 왕복거리</span><span class="data-value">${centerCost.distance.toFixed(1)} km</span></div>
+                    <div class="data-row"><span class="data-label">교통비</span><span class="data-value">${centerCost.trans.toLocaleString()} 원</span></div>
+                    <div class="data-row"><span class="data-label">식비 (${centerCost.mealCount}식)</span><span class="data-value">${centerCost.meal.toLocaleString()} 원</span></div>
+                    <div class="data-row"><span class="data-label">숙박비 (${centerCost.lodgeCount}박)</span><span class="data-value">${centerCost.lodge.toLocaleString()} 원</span></div>
+                    <div class="subtotal-row data-row" style="margin-bottom:0;">
+                        <span class="data-label">검사장 소계</span><span class="data-value">${centerCost.total.toLocaleString()} 원</span>
+                    </div>
+                </div>
+                
+                <div class="ticket-divider"></div>
+
+                <div class="ticket-section">
+                    <div class="ticket-section-title"><span class="material-symbols-rounded" style="font-size:20px;">looks_two</span> 입영부대 방문 여비</div>
+                    <div class="data-row"><span class="data-label">이동 경로</span><span class="data-value">출발지 ↔ ${base}</span></div>
+                    <div class="data-row"><span class="data-label">총 왕복거리</span><span class="data-value">${baseCost.distance.toFixed(1)} km</span></div>
+                    <div class="data-row"><span class="data-label">교통비</span><span class="data-value">${baseCost.trans.toLocaleString()} 원</span></div>
+                    <div class="data-row"><span class="data-label">식비 (${baseCost.mealCount}식)</span><span class="data-value">${baseCost.meal.toLocaleString()} 원</span></div>
+                    <div class="data-row"><span class="data-label">숙박비 (${baseCost.lodgeCount}박)</span><span class="data-value">${baseCost.lodge.toLocaleString()} 원</span></div>
+                    <div class="subtotal-row data-row" style="margin-bottom:0;">
+                        <span class="data-label">입영부대 소계</span><span class="data-value">${baseCost.total.toLocaleString()} 원</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById('receipt-box').innerHTML = receiptHTML;
+        document.getElementById('grand-total-text').innerHTML = `${grandTotal.toLocaleString()}<span>원</span>`;
+    }
+
+    // ----------------------------------------------------
+    // 부가 기능 (링크, 초기화)
+    // ----------------------------------------------------
+    function openSurveyUrl() {
+        const surveyUrl = "https://forms.gle/UDbEPi2BWZRHM6GE9"; // ★링크 삽입★
+        if (surveyUrl === "여기에_구글폼_링크_입력") alert("설문조사 링크가 아직 등록되지 않았습니다.");
+        else window.open(surveyUrl, '_blank');
+    }
+
+    function resetCalculator() {
+        // UI 요소들 초기화
+        document.getElementById('agree-checkbox').checked = false;
+        document.getElementById('sido-select').value = "";
+        document.getElementById('sigungu-select').innerHTML = '<option value="" disabled selected>시·구·군을 선택해주세요</option>';
+        document.getElementById('center-select').value = "";
+        document.getElementById('base-select').value = "";
+        document.getElementById('group-base').style.display = 'none';
+        
+        document.querySelectorAll('.choice-card').forEach(card => card.classList.remove('selected'));
+        document.getElementsByName('exam_type_radio').forEach(radio => radio.checked = false);
+
+        // 강제 이벤트 발생으로 잠금 상태 복구
+        const event = new Event('change');
+        document.getElementById('agree-checkbox').dispatchEvent(event);
+
+        // 화면 전환 복구
+        document.getElementById('page-result').classList.remove('active');
+        document.getElementById('page-input').classList.add('active');
+        document.getElementById('back-btn').style.visibility = 'hidden';
+        window.scrollTo(0, 0);
+    }
+</script>
+
+</body>
+</html>
