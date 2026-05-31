@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>(가상) 병역의무 여비계산기</title>
     <script src="data.js"></script> 
-    <!-- 모바일 앱스러운 폰트와 아이콘 적용을 위해 구글 폰트 추가 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -64,6 +63,21 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.1); /* PC에서 볼 때 구분을 위해 */
         }
 
+        /* ★ 워터마크 (촘촘하게 변경 및 첫화면부터 노출) ★ */
+        .watermark-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none; /* 터치 방해 금지 */
+            z-index: 9999; /* 최상단 배치 */
+            opacity: 0.08; /* 아주 투명하게 */
+            /* width와 height를 줄여 더 빽빽하게 배치 */
+            background-image: url("data:image/svg+xml,%3Csvg width='150' height='150' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='15' fill='red' font-family='sans-serif' font-weight='bold' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30 75 75)'%3E가상 여비계산 캡쳐 금지%3C/text%3E%3C/svg%3E");
+            /* display: none 제거 (항상 보이도록 설정) */
+        }
+
         /* 앱 헤더 (e-병무지갑 스타일) */
         .app-header {
             background-color: var(--surface);
@@ -79,7 +93,7 @@
         }
         
         .app-header h1 {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--text-dark);
             margin: 0;
@@ -134,6 +148,38 @@
             line-height: 1.5;
             margin-bottom: 12px;
         }
+
+        /* ★ 추가: 캡처/공유 금지 강경 경고 박스 ★ */
+        .danger-banner {
+            background-color: #ffeef0;
+            border: 1px solid #ff4757;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .danger-banner .title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #d63031;
+            font-weight: 800;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .danger-banner ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #d63031;
+            font-size: 0.85rem;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .danger-banner li { margin-bottom: 6px; }
+        .danger-banner li:last-child { margin-bottom: 0; }
 
         /* 체크박스 커스텀 (애플/안드로이드 스타일 섞음) */
         .custom-checkbox {
@@ -377,6 +423,7 @@
             border: 1px solid var(--border);
             box-shadow: none;
             margin-top: 12px;
+            margin-bottom: 24px;
         }
 
         /* -------------------------------------
@@ -487,21 +534,34 @@
 
 <div class="app-container">
     
-    <!-- 앱 상단 헤더 -->
+    <div class="watermark-bg" id="watermark"></div>
+
     <header class="app-header">
         <span class="material-symbols-rounded header-icon" onclick="resetCalculator()" style="visibility:hidden;" id="back-btn">arrow_back_ios</span>
         <h1>⚠ (가상) 병역 여비계산기 ⚠</h1>
         <span class="material-symbols-rounded header-icon">menu</span>
     </header>
 
-    <!-- ================= PAGE 1: 입력 화면 ================= -->
     <div id="page-input" class="page active content-area">
         
+        <div class="danger-banner">
+            <div class="title"><span class="material-symbols-rounded">warning</span> 화면 캡처 및 SNS 공유 금지</div>
+            <ul>
+                <li>본 프로그램은 <b>설문조사를 위한 가상 시뮬레이션</b>입니다. <br>실제 여비 지급액과 다릅니다.</li>
+                <li>실제 여비는 <b>'주민등록상 거주지'</b>와 <b>'관할 검사장'</b> 등 규정에 따라 엄격히 산출됩니다.</li>
+                <li>임의의 출발지나 검사장, 입영부대로 입력한 결과는 <b>어떠한 법적/행정적 효력이 없습니다.</b></li>
+            </ul>
+        </div>
+
         <div class="alert-banner">
-            <div class="title"><span class="material-symbols-rounded">info</span> 설문조사 체험용 가상 여비계산기</div>
+            <div class="title"><span class="material-symbols-rounded">info</span> 주의사항 확인</div>
             <div class="desc">
-                본 프로그램은 앱 기능 도입을 위한 모의 체험판입니다.<br>
-                산출된 결과는 실제 지급액과 다를 수 있습니다.
+                <ul>
+                    <li> 앱 기능 도입을 위한 모의 체험판입니다. </li>
+                        산출된 결과는 실제 지급액과 다를 수 있습니다.
+                        
+                    <li> 위 내용을 모두 확인하셨습니까? </li>
+                </ul>    
             </div>
             
             <label class="custom-checkbox">
@@ -510,7 +570,6 @@
             </label>
         </div>
 
-        <!-- 1. 검사 종류 선택 -->
         <div class="section-card disabled" id="group-type">
             <div class="section-title"><span class="number-badge">1</span> 판정검사 종류</div>
             <div class="choice-grid">
@@ -527,9 +586,8 @@
             </div>
         </div>
 
-        <!-- 2. 출발지 선택 -->
         <div class="section-card disabled" id="group-origin">
-            <div class="section-title"><span class="number-badge">2</span> 출발지 (시·구·군)</div>
+            <div class="section-title"><span class="number-badge">2</span> 출발지 (시·구·군청 소재지 기준)</div>
             <div class="input-wrap">
                 <select id="sido-select" onchange="updateSigungu()" disabled>
                     <option value="" disabled selected>시·도를 선택해주세요</option>
@@ -544,7 +602,6 @@
             </div>
         </div>
 
-        <!-- 3. 검사장 선택 -->
         <div class="section-card disabled" id="group-center">
             <div class="section-title"><span class="number-badge">3</span> 참석 검사장</div>
             <div class="input-wrap">
@@ -555,7 +612,6 @@
             </div>
         </div>
 
-        <!-- 4. 입영 부대 선택 -->
         <div class="section-card disabled" id="group-base" style="display: none;">
             <div class="section-title"><span class="number-badge">4</span> 입영 부대</div>
             <div class="input-wrap">
@@ -566,10 +622,8 @@
             </div>
         </div>
         
-        <!-- 하단 여백 확보 -->
         <div style="height: 60px;"></div>
 
-        <!-- 하단 고정 버튼 -->
         <div class="floating-bottom">
             <button class="btn btn-primary" id="calc-btn" onclick="calculateExpenses()" disabled>
                 예상 여비 확인하기
@@ -578,31 +632,34 @@
     </div>
 
 
-    <!-- ================= PAGE 2: 결과 화면 ================= -->
     <div id="page-result" class="page content-area">
         
         <div class="result-header-box">
             <span class="material-symbols-rounded icon">check_circle</span>
             <h2>⚠(가상) 여비 산출 완료</h2>
             <p style="color:var(--text-light); font-size:0.9rem; margin:0;">2026년도 기준 모의 계산 결과입니다.</p>
-            <p style="color:var(--text-light); font-size:1.5rem; margin:0;">주의. 가상의 결과값입니다.</p>
-
         </div>
 
-        <!-- 티켓 형태의 상세 영수증 -->
+        <div class="danger-banner">
+            <div class="title"><span class="material-symbols-rounded">warning</span> 화면 캡처 및 SNS 공유 절대 금지</div>
+            <ul>
+                <li>본 프로그램은 <b>설문조사를 위한 가상 시뮬레이션</b>입니다. 실제 여비 지급액과 다릅니다.</li>
+                <li>실제 여비는 <b>'주민등록상 거주지'</b>와 <b>'관할 검사장'</b> 등 규정에 따라 엄격히 산출됩니다.</li>
+                <li>임의의 출발지나 검사장, 입영부대로 입력한 결과는 <b>어떠한 법적/행정적 효력이 없습니다.</b></li>
+            </ul>
+        </div>
+
         <div class="ticket-box" id="receipt-box">
-            <!-- 자바스크립트로 내역 주입 -->
-        </div>
+            </div>
 
-        <!-- 총액 강조 박스 -->
         <div class="total-amount-box">
             <div class="total-label">총 예상 지급액</div>
-            <div class="total-label">⚠주의⚠ 가상의 금액입니다.</div>
+            <div class="total-label" style="color:#ffcc00; font-weight:700;">⚠가상의 금액입니다⚠</div>
             <div class="total-value" id="grand-total-text">0<span>원</span></div>
         </div>
 
         <div style="text-align: center; margin-top: 32px; margin-bottom: 16px;">
-            <p style="font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin:0 0 8px 0;">
+            <p style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin:0 0 8px 0;">
                 잠깐! 1분만 투자해 주세요 🙏
             </p>
             <p style="font-size: 1rem; color: var(--text-light); margin:0;">
@@ -610,7 +667,6 @@
             </p>
         </div>
 
-        <!-- 설문 버튼 & 다시하기 버튼 -->
         <button class="btn btn-survey" onclick="openSurveyUrl()">
             <span class="material-symbols-rounded">edit_square</span> 체험 후기 및 설문조사 참여하기 👉
         </button>
@@ -811,6 +867,7 @@
         document.getElementById('page-input').classList.remove('active');
         document.getElementById('page-result').classList.add('active');
         document.getElementById('back-btn').style.visibility = 'visible';
+        
         window.scrollTo(0, 0);
 
         const fuelUnit = 1486;
@@ -936,6 +993,7 @@
         document.getElementById('page-result').classList.remove('active');
         document.getElementById('page-input').classList.add('active');
         document.getElementById('back-btn').style.visibility = 'hidden';
+        
         window.scrollTo(0, 0);
     }
 </script>
