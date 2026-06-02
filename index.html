@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>(가상) 병역의무 여비계산기</title>
+    <title>(가안) 내 여비 미리보기 서비스 </title>
     <script src="data.js"></script> 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -538,7 +538,7 @@
 
     <header class="app-header">
         <span class="material-symbols-rounded header-icon" onclick="resetCalculator()" style="visibility:hidden;" id="back-btn">arrow_back_ios</span>
-        <h1>⚠ (가상) 병역 여비계산기 ⚠</h1>
+        <h1>⚠ (가상) 내 여비 미리보기 ⚠</h1>
         <span class="material-symbols-rounded header-icon">menu</span>
     </header>
 
@@ -547,7 +547,7 @@
         <div class="danger-banner">
             <div class="title"><span class="material-symbols-rounded">warning</span> 화면 캡처 및 SNS 공유 금지</div>
             <ul>
-                <li>본 프로그램은 <b>설문조사를 위한 가상 시뮬레이션</b>입니다. <br>실제 여비 지급액과 다릅니다.</li>
+                <li>본 프로그램은 <b>설문조사를 위한 가상 시뮬레이션</b>입니다. <br>!! 실제 여비 지급액과 다릅니다 !!</li>
                 <li>실제 여비는 <b>'주민등록상 거주지'</b>와 <b>'관할 검사장'</b> 등 규정에 따라 엄격히 산출됩니다.</li>
                 <li>임의의 출발지나 검사장, 입영부대로 입력한 결과는 <b>어떠한 법적/행정적 효력이 없습니다.</b></li>
             </ul>
@@ -557,9 +557,7 @@
             <div class="title"><span class="material-symbols-rounded">info</span> 주의사항 확인</div>
             <div class="desc">
                 <ul>
-                    <li> 앱 기능 도입을 위한 모의 체험판입니다. </li>
-                        산출된 결과는 실제 지급액과 다를 수 있습니다.
-                        
+                    <li> '내 여비 미리보기' 앱 기능 도입을 위한 가상 체험판입니다. <br><b>산출된 결과는 실제 지급액과 다를 수 있습니다.</b></li>
                     <li> 위 내용을 모두 확인하셨습니까? </li>
                 </ul>    
             </div>
@@ -571,7 +569,7 @@
         </div>
 
         <div class="section-card disabled" id="group-type">
-            <div class="section-title"><span class="number-badge">1</span> 판정검사 종류</div>
+            <div class="section-title"><span class="number-badge">1</span>판정검사 종류</div>
             <div class="choice-grid">
                 <div class="choice-card" id="card-draft" onclick="selectExamType('draft')">
                     <input type="radio" name="exam_type_radio" id="radio-draft" value="draft" disabled>
@@ -590,13 +588,13 @@
             <div class="section-title"><span class="number-badge">2</span> 출발지 (주민등록지 시구군청 기준)</div>
             <div class="input-wrap">
                 <select id="sido-select" onchange="updateSigungu()" disabled>
-                    <option value="" disabled selected>시·도를 선택해주세요</option>
+                    <option value="" disabled selected>시·도 선택  (예. 경기도, 부산광역시)</option>
                 </select>
                 <span class="material-symbols-rounded select-icon">expand_more</span>
             </div>
             <div class="input-wrap">
                 <select id="sigungu-select" onchange="checkInputsAndScroll('group-center')" disabled>
-                    <option value="" disabled selected>시·구·군을 선택해주세요</option>
+                    <option value="" disabled selected>시·구·군 선택  (예. 수원시, 울주군, 남구)</option>
                 </select>
                 <span class="material-symbols-rounded select-icon">expand_more</span>
             </div>
@@ -606,7 +604,7 @@
             <div class="section-title"><span class="number-badge">3</span> 참석 검사장</div>
             <div class="input-wrap">
                 <select id="center-select" onchange="checkInputsAndScroll('group-base')" disabled>
-                    <option value="" disabled selected>방문하신 검사장을 선택하세요</option>
+                    <option value="" disabled selected>방문하신 검사장 선택</option>
                 </select>
                 <span class="material-symbols-rounded select-icon">expand_more</span>
             </div>
