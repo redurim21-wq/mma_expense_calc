@@ -63,7 +63,7 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.1); /* PC에서 볼 때 구분을 위해 */
         }
 
-        /* ★ 워터마크 (촘촘하게 변경 및 첫화면부터 노출) ★ */
+        /* ★ 워터마크 (두 문장 교차 노출) ★ */
         .watermark-bg {
             position: fixed;
             top: 0;
@@ -73,9 +73,7 @@
             pointer-events: none; /* 터치 방해 금지 */
             z-index: 9999; /* 최상단 배치 */
             opacity: 0.08; /* 아주 투명하게 */
-            /* width와 height를 줄여 더 빽빽하게 배치 */
-            background-image: url("data:image/svg+xml,%3Csvg width='150' height='150' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='15' fill='red' font-family='sans-serif' font-weight='bold' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30 75 75)'%3E가상 여비계산 캡쳐 금지%3C/text%3E%3C/svg%3E");
-            /* display: none 제거 (항상 보이도록 설정) */
+            background-image: url("data:image/svg+xml,%3Csvg width='350' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='rotate(-20 175 100)' font-size='14' fill='red' font-family='sans-serif' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E%3Ctext x='50%25' y='40%25'%3E가상 여비계산 캡쳐 금지%3C/text%3E%3Ctext x='50%25' y='60%25'%3E테스트 시연용으로 법적 효력은 없습니다.%3C/text%3E%3C/g%3E%3C/svg%3E");
         }
 
         /* 앱 헤더 (e-병무지갑 스타일) */
@@ -520,13 +518,29 @@
             border-radius: var(--radius-lg);
             padding: 24px;
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             box-shadow: 0 8px 24px rgba(0, 86, 179, 0.25);
         }
         
         .total-label { font-size: 1rem; font-weight: 500; opacity: 0.9; margin-bottom: 8px; }
         .total-value { font-size: 2.2rem; font-weight: 900; letter-spacing: -1px; }
         .total-value span { font-size: 1.2rem; font-weight: 500; margin-left: 4px; }
+
+        /* 규정 안내 링크 버튼 */
+        .info-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            transition: background-color 0.2s;
+        }
+        .info-link-btn:active { background-color: #cce0f5; }
 
     </style>
 </head>
@@ -656,7 +670,14 @@
             <div class="total-value" id="grand-total-text">0<span>원</span></div>
         </div>
 
-        <div style="text-align: center; margin-top: 32px; margin-bottom: 16px;">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <a href="http://open.mma.go.kr/caisGGGS/board/ikMyeongBoardView.do?gesipan_id=33&gsgeul_no=1518162&menu_id=null&pageIndex=1&searchCondition=&searchKeyword=&searchDate=&sdate=&edate=&pageUnit=10&searchCondition2=&searchKeyword2=&jakseong_bmno=null&grgsgeul_no=0" 
+               target="_blank" class="info-link-btn">
+                <span class="material-symbols-rounded" style="font-size: 18px;">description</span> 상세 여비 규정 확인하기
+            </a>
+        </div>
+
+        <div style="text-align: center; margin-top: 16px; margin-bottom: 16px;">
             <p style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin:0 0 8px 0;">
                 잠깐! 1분만 투자해 주세요 🙏
             </p>
@@ -874,28 +895,37 @@
         const lodgeUnit = 50000;
 
         function getCostBreakdown(distance, mode) {
-            let roundTripDist = distance * 2;
-            let oneWayTrans = (distance * (fuelUnit / efficiency)) + (900 + (distance * 44.3));
-            let roundTripTrans = Math.floor((oneWayTrans * 2) / 100) * 100;
+            // 편도 기준 교통비 산출
+            let oneWayTransRaw = (distance * (fuelUnit / efficiency)) + (900 + (distance * 44.3));
+            let oneWayTrans = Math.floor(oneWayTransRaw / 100) * 100;
+            let roundTripTrans = Math.floor((oneWayTransRaw * 2) / 100) * 100;
 
-            let mealCount = 0, lodgeCount = 0, finalTrans = roundTripTrans;
+            let calcDist = 0, finalTrans = 0, mealCount = 0, lodgeCount = 0;
 
             if (mode === 'center') {
-                if (roundTripDist <= 30) { mealCount = 1; finalTrans = 8000; }
-                else if (roundTripDist <= 60) { mealCount = 1; }
-                else if (roundTripDist <= 120) { mealCount = 2; }
+                // 검사장은 왕복 기준 산출
+                calcDist = distance * 2;
+                finalTrans = roundTripTrans;
+
+                if (calcDist <= 30) { mealCount = 1; finalTrans = 8000; }
+                else if (calcDist <= 60) { mealCount = 1; }
+                else if (calcDist <= 120) { mealCount = 2; }
                 else { mealCount = 3; lodgeCount = 1; }
             } else {
-                if (roundTripDist <= 30) { mealCount = 0; finalTrans = 4000; }
-                else if (roundTripDist <= 60) { mealCount = 0; }
-                else if (roundTripDist <= 120) { mealCount = 1; }
-                else if (roundTripDist <= 200) { mealCount = 2; }
-                else if (roundTripDist <= 300) { mealCount = 2; }
+                // 입영부대는 편도 기준 산출
+                calcDist = distance;
+                finalTrans = oneWayTrans;
+
+                if (calcDist <= 30) { mealCount = 0; finalTrans = 4000; }
+                else if (calcDist <= 60) { mealCount = 0; }
+                else if (calcDist <= 120) { mealCount = 1; }
+                else if (calcDist <= 200) { mealCount = 2; }
+                else if (calcDist <= 300) { mealCount = 2; }
                 else { mealCount = 3; lodgeCount = 1; }
             }
 
             return {
-                distance: roundTripDist, trans: finalTrans, 
+                distance: calcDist, trans: finalTrans, 
                 meal: mealCount * mealUnit, mealCount: mealCount, 
                 lodge: lodgeCount * lodgeUnit, lodgeCount: lodgeCount, 
                 total: finalTrans + (mealCount * mealUnit) + (lodgeCount * lodgeUnit)
@@ -946,8 +976,8 @@
 
                 <div class="ticket-section">
                     <div class="ticket-section-title"><span class="material-symbols-rounded" style="font-size:20px;">looks_two</span> 입영부대 방문 여비</div>
-                    <div class="data-row"><span class="data-label">이동 경로</span><span class="data-value">출발지 ↔ ${base}</span></div>
-                    <div class="data-row"><span class="data-label">총 왕복거리</span><span class="data-value">${baseCost.distance.toFixed(1)} km</span></div>
+                    <div class="data-row"><span class="data-label">이동 경로</span><span class="data-value">출발지 ➔ ${base}</span></div>
+                    <div class="data-row"><span class="data-label">총 편도거리</span><span class="data-value">${baseCost.distance.toFixed(1)} km</span></div>
                     <div class="data-row"><span class="data-label">교통비</span><span class="data-value">${baseCost.trans.toLocaleString()} 원</span></div>
                     <div class="data-row"><span class="data-label">식비 (${baseCost.mealCount}식)</span><span class="data-value">${baseCost.meal.toLocaleString()} 원</span></div>
                     <div class="data-row"><span class="data-label">숙박비 (${baseCost.lodgeCount}박)</span><span class="data-value">${baseCost.lodge.toLocaleString()} 원</span></div>
