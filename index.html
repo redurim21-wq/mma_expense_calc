@@ -900,32 +900,35 @@
             let oneWayTrans = Math.floor(oneWayTransRaw / 100) * 100;
             let roundTripTrans = Math.floor((oneWayTransRaw * 2) / 100) * 100;
 
-            let calcDist = 0, finalTrans = 0, mealCount = 0, lodgeCount = 0;
+            let calcDist = distance; // 구간 판별은 무조건 '편도 거리' 기준
+            let finalTrans = 0, mealCount = 0, lodgeCount = 0;
 
             if (mode === 'center') {
-                // 검사장은 왕복 기준 산출
-                calcDist = distance * 2;
+                // 병역판정검사 (교통비 왕복 기준)
                 finalTrans = roundTripTrans;
 
                 if (calcDist <= 30) { mealCount = 1; finalTrans = 8000; }
                 else if (calcDist <= 60) { mealCount = 1; }
-                else if (calcDist <= 120) { mealCount = 2; }
-                else { mealCount = 3; lodgeCount = 1; }
+                else if (calcDist <= 120) { mealCount = 1; }
+                else if (calcDist <= 200) { mealCount = 2; }
+                else { mealCount = 3; lodgeCount = 1; } // 200km 초과 시 3식 + 1박
             } else {
-                // 입영부대는 편도 기준 산출
-                calcDist = distance;
+                // 입영부대 (교통비 편도 기준)
                 finalTrans = oneWayTrans;
 
                 if (calcDist <= 30) { mealCount = 0; finalTrans = 4000; }
                 else if (calcDist <= 60) { mealCount = 0; }
                 else if (calcDist <= 120) { mealCount = 1; }
-                else if (calcDist <= 200) { mealCount = 2; }
-                else if (calcDist <= 300) { mealCount = 2; }
-                else { mealCount = 3; lodgeCount = 1; }
+                else if (calcDist <= 200) { mealCount = 1; }
+                else if (calcDist <= 300) { mealCount = 1; }
+                else if (calcDist <= 400) { mealCount = 2; }
+                else { mealCount = 3; lodgeCount = 1; } // 400km 초과 시 3식 + 1박
             }
 
             return {
-                distance: calcDist, trans: finalTrans, 
+                // 화면 표출 시 검사장은 총 왕복거리, 입영부대는 총 편도거리로 안내
+                displayDistance: mode === 'center' ? distance * 2 : distance, 
+                trans: finalTrans, 
                 meal: mealCount * mealUnit, mealCount: mealCount, 
                 lodge: lodgeCount * lodgeUnit, lodgeCount: lodgeCount, 
                 total: finalTrans + (mealCount * mealUnit) + (lodgeCount * lodgeUnit)
@@ -943,7 +946,7 @@
                 <div class="ticket-section">
                     <div class="ticket-section-title"><span class="material-symbols-rounded" style="font-size:20px;">local_hospital</span> 검사장 방문 여비</div>
                     <div class="data-row"><span class="data-label">이동 경로</span><span class="data-value">출발지 ↔ ${center}</span></div>
-                    <div class="data-row"><span class="data-label">총 왕복거리</span><span class="data-value">${centerCost.distance.toFixed(1)} km</span></div>
+                    <div class="data-row"><span class="data-label">총 왕복거리</span><span class="data-value">${centerCost.displayDistance.toFixed(1)} km</span></div>
                     <div style="height:8px;"></div>
                     <div class="data-row"><span class="data-label">교통비</span><span class="data-value">${centerCost.trans.toLocaleString()} 원</span></div>
                     <div class="data-row"><span class="data-label">식비 (${centerCost.mealCount}식)</span><span class="data-value">${centerCost.meal.toLocaleString()} 원</span></div>
@@ -963,7 +966,7 @@
                 <div class="ticket-section">
                     <div class="ticket-section-title"><span class="material-symbols-rounded" style="font-size:20px;">looks_one</span> 검사장 방문 여비</div>
                     <div class="data-row"><span class="data-label">이동 경로</span><span class="data-value">출발지 ↔ ${center}</span></div>
-                    <div class="data-row"><span class="data-label">총 왕복거리</span><span class="data-value">${centerCost.distance.toFixed(1)} km</span></div>
+                    <div class="data-row"><span class="data-label">총 왕복거리</span><span class="data-value">${centerCost.displayDistance.toFixed(1)} km</span></div>
                     <div class="data-row"><span class="data-label">교통비</span><span class="data-value">${centerCost.trans.toLocaleString()} 원</span></div>
                     <div class="data-row"><span class="data-label">식비 (${centerCost.mealCount}식)</span><span class="data-value">${centerCost.meal.toLocaleString()} 원</span></div>
                     <div class="data-row"><span class="data-label">숙박비 (${centerCost.lodgeCount}박)</span><span class="data-value">${centerCost.lodge.toLocaleString()} 원</span></div>
@@ -977,7 +980,7 @@
                 <div class="ticket-section">
                     <div class="ticket-section-title"><span class="material-symbols-rounded" style="font-size:20px;">looks_two</span> 입영부대 방문 여비</div>
                     <div class="data-row"><span class="data-label">이동 경로</span><span class="data-value">출발지 ➔ ${base}</span></div>
-                    <div class="data-row"><span class="data-label">총 편도거리</span><span class="data-value">${baseCost.distance.toFixed(1)} km</span></div>
+                    <div class="data-row"><span class="data-label">총 편도거리</span><span class="data-value">${baseCost.displayDistance.toFixed(1)} km</span></div>
                     <div class="data-row"><span class="data-label">교통비</span><span class="data-value">${baseCost.trans.toLocaleString()} 원</span></div>
                     <div class="data-row"><span class="data-label">식비 (${baseCost.mealCount}식)</span><span class="data-value">${baseCost.meal.toLocaleString()} 원</span></div>
                     <div class="data-row"><span class="data-label">숙박비 (${baseCost.lodgeCount}박)</span><span class="data-value">${baseCost.lodge.toLocaleString()} 원</span></div>
